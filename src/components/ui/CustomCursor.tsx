@@ -3,160 +3,175 @@
 import { useEffect, useRef, useState } from "react";
 
 export function CustomCursor() {
-  const curRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
-  const trailRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const glowRef = useRef<HTMLDivElement>(null);
+
+  const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    if (isTouchDevice) return;
+    const isTouch =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-    setVisible(true);
+    if (isTouch) return;
+    setEnabled(true);
 
-    let mx = 0, my = 0;
-    let rx = 0, ry = 0;
-    let tx = 0, ty = 0;
+    let mouseX = 0,
+      mouseY = 0;
+    let ringX = 0,
+      ringY = 0;
+    let glowX = 0,
+      glowY = 0;
 
-    // Cursor follows mouse instantly
-    const onMouseMove = (e: MouseEvent) => {
-      mx = e.clientX;
-      my = e.clientY;
-      if (curRef.current) {
-        curRef.current.style.transform = `translate(${mx}px, ${my}px)`;
+    const move = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      // DOT (instant follow)
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
       }
     };
 
-    // RAF loop — ring aur trail smoothly follow karte hain
-    let rafId: number;
     const animate = () => {
-      rx += (mx - rx) * 0.1;
-      ry += (my - ry) * 0.1;
-      tx += (mx - tx) * 0.05;
-      ty += (my - ty) * 0.05;
+      // smooth follow
+      ringX += (mouseX - ringX) * 0.12;
+      ringY += (mouseY - ringY) * 0.12;
+
+      glowX += (mouseX - glowX) * 0.06;
+      glowY += (mouseY - glowY) * 0.06;
 
       if (ringRef.current) {
-        ringRef.current.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
-      }
-      if (trailRef.current) {
-        trailRef.current.style.transform = `translate(${tx}px, ${ty}px) translate(-50%, -50%)`;
+        ringRef.current.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
       }
 
-      rafId = requestAnimationFrame(animate);
+      if (glowRef.current) {
+        glowRef.current.style.transform = `translate3d(${glowX}px, ${glowY}px, 0) translate(-50%, -50%)`;
+      }
+
+      requestAnimationFrame(animate);
     };
-    rafId = requestAnimationFrame(animate);
 
-    // Hover effect
-    const hovSel = "a, button, [role='button'], .clickable";
+    const onDown = () => {
+      if (dotRef.current) {
+        dotRef.current.style.transform += " scale(0.6)";
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform += " scale(0.85)";
+      }
+    };
 
-    const onMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest(hovSel)) {
-        if (curRef.current) {
-          curRef.current.style.width = "20px";
-          curRef.current.style.height = "20px";
+    const onUp = () => {
+      if (dotRef.current) {
+        dotRef.current.style.transform = dotRef.current.style.transform.replace(
+          " scale(0.6)",
+          ""
+        );
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform = ringRef.current.style.transform.replace(
+          " scale(0.85)",
+          ""
+        );
+      }
+    };
+
+    const hoverTargets = "a, button, input, textarea, [role='button']";
+
+    const onOver = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest(hoverTargets)) {
+        if (dotRef.current) {
+          dotRef.current.style.width = "14px";
+          dotRef.current.style.height = "14px";
         }
         if (ringRef.current) {
-          ringRef.current.style.width = "60px";
-          ringRef.current.style.height = "60px";
-          ringRef.current.style.borderColor = "rgba(139, 92, 246, 0.9)";
+          ringRef.current.style.width = "55px";
+          ringRef.current.style.height = "55px";
+          ringRef.current.style.borderColor =
+            "rgba(6, 182, 212, 0.9)";
         }
       }
     };
 
-    const onMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest(hovSel)) {
-        if (curRef.current) {
-          curRef.current.style.width = "8px";
-          curRef.current.style.height = "8px";
+    const onOut = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      if (el.closest(hoverTargets)) {
+        if (dotRef.current) {
+          dotRef.current.style.width = "8px";
+          dotRef.current.style.height = "8px";
         }
         if (ringRef.current) {
           ringRef.current.style.width = "40px";
           ringRef.current.style.height = "40px";
-          ringRef.current.style.borderColor = "rgba(6, 182, 212, 0.6)";
+          ringRef.current.style.borderColor =
+            "rgba(6, 182, 212, 0.6)";
         }
       }
     };
 
-    // Click effect
-    const onMouseDown = () => {
-      if (curRef.current) curRef.current.style.scale = "0.7";
-      if (ringRef.current) ringRef.current.style.scale = "0.8";
-    };
-    const onMouseUp = () => {
-      if (curRef.current) curRef.current.style.scale = "1";
-      if (ringRef.current) ringRef.current.style.scale = "1";
-    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("mouseover", onOver);
+    window.addEventListener("mouseout", onOut);
 
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseover", onMouseOver);
-    window.addEventListener("mouseout", onMouseOut);
-    window.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mouseup", onMouseUp);
+    requestAnimationFrame(animate);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseover", onMouseOver);
-      window.removeEventListener("mouseout", onMouseOut);
-      window.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("mouseover", onOver);
+      window.removeEventListener("mouseout", onOut);
     };
   }, []);
 
-  if (!visible) return null;
+  if (!enabled) return null;
 
   return (
     <>
-      {/* Dot — instant follow, mix-blend-mode difference */}
+      {/* DOT */}
       <div
-        ref={curRef}
-        className="fixed pointer-events-none z-[99999]"
+        ref={dotRef}
+        className="fixed top-0 left-0 pointer-events-none z-[99999]"
         style={{
           width: "8px",
           height: "8px",
-          background: "#fff",
           borderRadius: "50%",
-          transform: "translate(-50%, -50%)",
-          willChange: "transform",
+          background: "#ffffff",
           mixBlendMode: "difference",
-          transition: "width .15s, height .15s",
-          top: 0,
-          left: 0,
+          transform: "translate(-50%, -50%)",
+          transition: "width 0.15s ease, height 0.15s ease",
         }}
       />
 
-      {/* Ring — 10% speed follow */}
+      {/* RING */}
       <div
         ref={ringRef}
-        className="fixed pointer-events-none z-[99998]"
+        className="fixed top-0 left-0 pointer-events-none z-[99998]"
         style={{
           width: "40px",
           height: "40px",
-          border: "1px solid rgba(6, 182, 212, 0.6)",
           borderRadius: "50%",
+          border: "1px solid rgba(6, 182, 212, 0.6)",
           transform: "translate(-50%, -50%)",
-          willChange: "transform",
-          transition: "width .3s, height .3s, border-color .3s",
-          top: 0,
-          left: 0,
+          transition:
+            "width 0.25s ease, height 0.25s ease, border-color 0.25s ease",
         }}
       />
 
-      {/* Trail glow — 5% speed follow */}
+      {/* GLOW (soft background aura) */}
       <div
-        ref={trailRef}
-        className="fixed pointer-events-none z-[99990]"
+        ref={glowRef}
+        className="fixed top-0 left-0 pointer-events-none z-[99990]"
         style={{
-          width: "320px",
-          height: "320px",
+          width: "280px",
+          height: "280px",
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(6,182,212,0.045), transparent 70%)",
+          background:
+            "radial-gradient(circle, rgba(6,182,212,0.08), transparent 70%)",
           transform: "translate(-50%, -50%)",
-          willChange: "transform",
-          top: 0,
-          left: 0,
         }}
       />
     </>

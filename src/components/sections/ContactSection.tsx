@@ -20,7 +20,6 @@ export function ContactSection() {
     templateId: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE!,
     publicKey: process.env.NEXT_PUBLIC_EMAILJS_KEY!,
   };
-
   useEffect(() => {
     try {
       emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
@@ -48,6 +47,11 @@ export function ContactSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+
+    console.log("Service:", process.env.NEXT_PUBLIC_EMAILJS_SERVICE);
+    console.log("Template:", process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE);
+    console.log("Key:", process.env.NEXT_PUBLIC_EMAILJS_KEY);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -362,3 +366,4 @@ export function ContactSection() {
     </SectionWrapper>
   );
 }
+
